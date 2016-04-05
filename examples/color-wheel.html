@@ -1,0 +1,201 @@
+<template name="slider">
+	<input type="range" min="0" max="100" bind-to={"value", values, key} />
+	<span class="value">{{ values.get(key) }}</span>
+</template>
+
+<script>
+Template.slider.use("twoway");
+Template.slider.twoway("value", {
+	get: function(vals, k) { return vals.get(k); },
+	change: function(v, vals, k) { vals.set(k, v); }
+});
+</script>
+
+<template name="dial">
+	<div class="dial" on-mousedown={'spin',values,'hue'} style="{{ dialStyle(values) }}">
+		<div class="position"></div>
+		<div class="hex">{{ values.get('hue') }}°</div>
+	</div>
+</template>
+
+<script>
+Template.dial.use("actions");
+Template.dial.actions("spin", function(e, values, key) {
+	var base, anchor, move, release, bbox, center, self;
+
+	e.original.preventDefault();
+	document.body.classList.add("dragging");
+
+	self = this;
+	base = values.get(key);
+	anchor = [ e.original.clientX, e.original.clientY ];
+	bbox = e.node.getBoundingClientRect();
+	center = [ bbox.left + Math.round(bbox.width / 2),
+			   bbox.top + Math.round(bbox.height / 2) ];
+
+	document.addEventListener("mousemove", move = function(e) {
+		e.preventDefault();
+
+		var pt = [ e.clientX, e.clientY ],
+		radians = angle(center, anchor, pt),
+		degrees = Math.floor((radians / Math.PI) * 180);
+
+		if (side(center, anchor, pt) < 0) degrees = 360 - degrees;
+		values.set(key, (base + degrees) % 360);
+	});
+
+	document.addEventListener("mouseup", release = function(e) {
+		document.removeEventListener("mousemove", move);
+		document.removeEventListener("mouseup", release);
+		document.body.classList.remove("dragging");
+	});
+});
+
+Template.dial.helpers({
+    dialStyle: function(values) {
+        var hue = values.get('hue'),
+            saturation = values.get('saturation'),
+            lightness = values.get('lightness');
+        
+        return "background-color: hsl(" + hue + ", " + saturation + "%, " + lightness + "%);" +
+            "transform: rotate(" + hue + "deg);" +
+            "-webkit-transform: rotate(" + hue + "deg);" +
+            "-moz-transform: rotate(" + hue + "deg);";
+    }
+})
+</script>
+
+<template name="layout">
+	<div class="form-group">
+		<label>Hue</label>
+		{% render "dial" %}
+	</div>
+
+	<div class="form-group">
+		<label>Saturation</label>
+		{% with sliderContext("saturation") %}
+		{% render "slider" %}
+		{% endwith %}
+	</div>
+
+	<div class="form-group">
+		<label>Lightness</label>
+		{% with sliderContext("lightness") %}
+		{% render "slider" %}
+		{% endwith %}
+	</div>
+
+	<a href="#" on-click={'reset',values}>Reset</a>
+</template>
+
+<script>
+Template.layout.use("actions");
+Template.layout.actions("reset", function(e, values) {
+	e.original.preventDefault();
+	resetValues(values);
+});
+
+Template.layout.helpers({
+	// part of the slider context; {{ values }} is inherited
+	sliderContext: function(key) {
+		return { key: key };
+	}
+});
+</script>
+
+<script>
+Temple.paint("layout", "body", {
+	values: resetValues()
+});
+
+// reset state back to initial
+function resetValues(values) {
+	if (values == null) values = new Temple.Map();
+	values.set({
+		hue: 0,
+		saturation: 100,
+		lightness: 50
+	});
+	return values;
+}
+
+// calculates the angle in radians between three points
+function angle(c, p1, p2) {
+	var cp1 = dist(c, p1),
+		cp2 = dist(c, p2),
+		p1p2 = dist(p1, p2);
+
+	return Math.acos((cp1*cp1 + cp2*cp2 - p1p2*p1p2) / (2 * cp1 * cp2));
+}
+
+// calculates the distance between two points
+function dist(p1, p2) {
+	var x = p1[0] - p2[0],
+		y = p1[1] - p2[1];
+
+	return Math.sqrt(x*x + y*y);
+}
+
+// determines which side an angle is facing
+function side(c, p1, p2) {
+	var xproduct = (p1[0]-c[0])*(p2[1]-c[1]) - (p1[1]-c[1])*(p2[0]-c[0]);
+
+	if (xproduct > 0) return 1;
+	if (xproduct < 0) return -1;
+	return 0;
+}
+</script>
+
+<style>
+body, html {
+    /*height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: auto;*/
+	text-align: center;
+}
+
+.form-group {
+	margin-bottom: 20px;
+}
+
+.dial {
+    width: 120px;
+    height: 120px;
+    border-radius: 60px;
+    margin: 0 auto;
+    position: relative;
+    cursor: move;
+    cursor: -webkit-grab;
+    cursor: -moz-grab;
+}
+
+body.dragging, .dial:active {
+	cursor: move;
+	cursor: -webkit-grabbing;
+	cursor: -moz-grabbing;
+}
+
+.dial .position {
+    position: absolute;
+    left: 50%;
+    top: 5px;
+    height: 4px;
+    width: 4px;
+    border-radius: 2px;
+    border: 1px solid white;
+    background-color: black;
+    opacity: 0.7;
+}
+
+.dial .hex {
+    text-align: center;
+    line-height: 120px;
+    font-weight: bold;
+}
+
+label {
+	font-weight: bold;
+	display: block;
+}
+</style>
