@@ -1,0 +1,4 @@
+temple-playground:
+  image: 'beneaththeink/temple-playground:latest'
+  ports:
+    - '80:80'
