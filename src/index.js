@@ -2,6 +2,7 @@ import express from "express";
 import path from "path";
 import fs from "fs-promise";
 import compress from "compression";
+import {version} from "../package.json";
 
 let templeDists = {};
 templeDists.runtimeFull = require.resolve("templejs-runtime/dist/browser.js");
@@ -65,3 +66,5 @@ export default function createApp() {
 
 	return app;
 }
+
+createApp.VERSION = version;

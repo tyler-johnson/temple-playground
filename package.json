@@ -1,5 +1,6 @@
 {
   "name": "templejs-playground",
+  "version": "0.0.0-edge",
   "description": "A Temple web app for playing with the Temple language.",
   "author": "Tyler Johnson <tyler@tylerjohnson.me>",
   "repository": {
