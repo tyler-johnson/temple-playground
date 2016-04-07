@@ -75,14 +75,7 @@ Template.editor.decorate("ace-editor", function(d, content, reset) {
 <script>
 function closest(node, selector) {
 	while (node) {
-		if (node.nodeType === Node.ELEMENT_NODE) {
-			if (selector.nodeType === Node.ELEMENT_NODE) {
-				if (selector === node) return node;
-			} else if (typeof selector === "string") {
-				if (node.matches(selector)) return node;
-			}
-		}
-
+		if (Temple.utils.matches(node, selector)) return node;
 		node = node.parentNode;
 	}
 }
